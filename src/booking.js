@@ -4,8 +4,8 @@ import {
   Box, Text, Button, FormControl, FormLabel, Input, Textarea, useToast, AlertDialog,
   AlertDialogBody, AlertDialogFooter, AlertDialogHeader, AlertDialogContent, AlertDialogOverlay
 } from '@chakra-ui/react';
-function Booking() {
-  const [dateAndTime, setDateAndTime] = useState('');
+function Booking({user}) {
+  const [date, setDateAndTime] = useState('');
   const [petId, setPetId] = useState('');
   const [petAge, setPetAge] = useState('');
   const [petBreed, setPetBreed] = useState('');
@@ -17,17 +17,17 @@ function Booking() {
   const onClose = () => setIsAlertOpen(false);
   const cancelRef = React.useRef();
   const toast = useToast();
-  const userId = getCurrentUser().username;
 
   const checkPet = async () => {
     try {
-      const response = await fetch(`https://al8ov7f63c.execute-api.eu-west-1.amazonaws.com/dev/isOwner?userId=${userId}&petId=${petId}`);
+      console.log(user.username);
+      const response = await fetch(`https://al8ov7f63c.execute-api.eu-west-1.amazonaws.com/dev/isOwner?userId=${user.username}&petId=${petId}`);
       const data = await response.json();
-
       if (response.ok && data && Object.keys(data).length !== 0) {
         setPetAge(data.petAge || '');
         setPetBreed(data.petBreed || '');
         setPetName(data.petName || '');
+        console.log('Pet exists with user id');
       } else {
         setAlertTitle('Pet Check');
         setAlertMessage('No pet exists, please input relevant pet information before submitting.');
@@ -35,8 +35,10 @@ function Booking() {
         setPetAge('');
         setPetBreed('');
         setPetName('');
+        console.log('Pet does not exist with user id');
       }
     } catch (error) {
+      console.log("in catch")
       toast({
         title: 'Error',
         description: 'Failed to fetch pet details',
@@ -49,29 +51,35 @@ function Booking() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     const bookingDetails = {
-      dateAndTime,
+      date,
+      userId: user.username,
       petId,
-      petAge,
-      petBreed,
-      petName,
+      info: {
+        petAge,
+        petBreed,
+        petName,
+      },
       reason
     };
 
     try {
-      const response = await fetch('https://yourapi.endpoint/bookings', {
+      console.log(JSON.stringify(bookingDetails));
+      const response = await fetch('https://zznn4f3szj.execute-api.eu-west-1.amazonaws.com/dev/book', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(bookingDetails)
       });
+      
       const data = await response.json();
 
       if (response.ok) {
         // Handle different status messages from the API
-        if (data.status === 'Successful Initiation') {
-          setAlertTitle('Subscription Pending');
-          setAlertMessage('Please confirm subscription in email, then click the button below to continue.');
+        console.log(data);
+        if (data.message === 'Step Function execution started successfully') {
+          setAlertTitle('Booking Notified');
+          setAlertMessage('Thanks for submitting a booking request. You may recieve a subscription notification, please accept that to confirm your booking.');
           setIsAlertOpen(true);
         } else if (data.status === 'Email notification sent') {
           setAlertTitle('Booking Confirmed');
@@ -100,7 +108,7 @@ function Booking() {
       <form onSubmit={handleSubmit}>
         <FormControl isRequired mb="4">
           <FormLabel>Date and Time</FormLabel>
-          <Input type="datetime-local" value={dateAndTime} onChange={e => setDateAndTime(e.target.value)} />
+          <Input type="datetime-local" value={date} onChange={e => setDateAndTime(e.target.value)} />
         </FormControl>
         <FormControl isRequired mb="4">
           <FormLabel>Pet ID</FormLabel>

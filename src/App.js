@@ -29,7 +29,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<MainLayout signOut={signOut} user={user} />}>
                   <Route index element={<Dashboard user={user} />} />
-                  <Route path="/booking" element={<Booking />} />
+                  <Route path="/booking" element={<Booking user={user} />} />
                   {/* Define more authenticated routes here */}
                 </Route>
               </Routes>
